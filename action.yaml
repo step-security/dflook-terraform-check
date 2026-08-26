@@ -1,0 +1,69 @@
+name: terraform-check
+description: Fail the job when a Terraform plan shows outstanding changes
+author: 'step-security'
+
+inputs:
+  # --- what to plan ---
+  path:
+    description: Directory holding the root module to plan. Defaults to the workspace root.
+    required: false
+    default: "."
+  workspace:
+    description: >-
+      Workspace to select before planning. Selection is skipped for backends that
+      take the workspace from the configuration instead.
+    required: false
+    default: "default"
+
+  # --- variables ---
+  # Both are materialised as auto-loaded tfvars files inside the module, so they
+  # apply to every command. `variables` is written last and therefore wins.
+  variables:
+    description: >-
+      Variable definitions in Terraform syntax, as they would appear in a tfvars
+      file. Overrides anything set by `var_file`.
+    required: false
+  var_file:
+    description: >-
+      Paths to tfvars files, one per line, relative to the workspace. A path that
+      does not exist fails the job rather than being skipped.
+    required: false
+
+  # --- backend ---
+  backend_config:
+    description: >-
+      Backend settings as `key=value`, one per line. Applied after
+      `backend_config_file`, so these take precedence.
+    required: false
+    default: ""
+  backend_config_file:
+    description: >-
+      Paths to backend config files, one per line, relative to the workspace.
+      A path that does not exist fails the job.
+    required: false
+    default: ""
+
+  # --- execution ---
+  parallelism:
+    description: Maximum concurrent operations. Zero leaves the limit to Terraform.
+    required: false
+    default: "0"
+
+outputs:
+  failure_reason:
+    description: >-
+      Set to `changes-to-apply` when the job failed because the plan showed
+      outstanding changes. Left unset when the job fails for any other reason, so
+      it tells drift apart from a broken configuration in an `if:` expression.
+  failure-reason:
+    description: >-
+      Hyphenated spelling of `failure_reason`, carrying the same value. Both are
+      published so either name can be referenced.
+
+runs:
+  using: node24
+  main: dist/index.js
+
+branding:
+  icon: globe
+  color: purple
